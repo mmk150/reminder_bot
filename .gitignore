@@ -1,0 +1,6 @@
+# created by virtualenv automatically
+thoth/toke.py
+thoth/scratch.py
+thoth/timers.db
+venv/
+.idea/
