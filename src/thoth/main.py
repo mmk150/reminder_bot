@@ -16,6 +16,7 @@ import databaseio
 
 
 intents: discord.Intents = discord.Intents.default()
+intents.message_content = True
 intents.typing = False
 intents.presences = False
 #intents.reactions = True
@@ -181,7 +182,8 @@ async def reactcheck(message: discord.Message, user: discord.User, delcode:str):
 
 
 def start():
-    client.run(token)
+    import os
+    client.run(os.environ.get('THOTH_DISCORD_TOKEN'))
 
 
 
