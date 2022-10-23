@@ -1,5 +1,5 @@
 import sqlite3
-from Timerz import Timerz
+from thoth.Timerz import Timerz
 import datetime
 
 conn = sqlite3.connect('timers.db')

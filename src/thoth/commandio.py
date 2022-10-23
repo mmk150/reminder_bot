@@ -4,8 +4,8 @@ import datetime
 import dateutil
 import re
 import secrets
-from timecalcs import word_to_time, convert_timer
-from Timerz import Timerz
+from thoth.timecalcs import word_to_time, convert_timer
+from thoth.Timerz import Timerz
 
 
 def parse_message(user: discord.User,req_time: datetime.datetime ,channel: discord.TextChannel.id ,del_code,message,badgermode):

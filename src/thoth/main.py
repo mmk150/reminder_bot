@@ -1,6 +1,4 @@
-from toke import  *
-
-import Timerz
+from thoth import Timerz, commandio, databaseio
 import dateutil.parser
 import discord
 import datetime
@@ -9,11 +7,6 @@ import secrets
 from discord.ext import tasks
 
 import asyncio
-import commandio
-import databaseio
-
-
-
 
 intents: discord.Intents = discord.Intents.default()
 intents.message_content = True
