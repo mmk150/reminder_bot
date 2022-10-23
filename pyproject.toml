@@ -6,11 +6,11 @@ authors = ["Your Name <you@example.com>"]
 
 [tool.poetry.dependencies]
 python = "^3.10"
-"discord.py" = "^1.7.3"
+"discord.py" = "^2"
 python-dateutil = "^2.8.2"
 
 [tool.poetry.dev-dependencies]
-"discord.py-stubs" = "^1.7.3"
+"discord.py-stubs" = "^2"
 
 [build-system]
 requires = ["poetry-core>=1.0.0"]

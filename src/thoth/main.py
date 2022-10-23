@@ -121,7 +121,7 @@ async def send_next_reminder(timer: Timerz.Timerz):
 
     userid = int(timer.user_id)
     print(userid)
-    user=await client.fetch_user(user_id=userid)
+    user=await client.fetch_user(userid)
     print(user)
     mention=user.mention
     chan_id=int(timer.channel)
