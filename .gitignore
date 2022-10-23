@@ -1,6 +1,14 @@
 # created by virtualenv automatically
+venv/
+.idea/
+
+# testing files
 thoth/toke.py
 thoth/scratch.py
 thoth/timers.db
-venv/
-.idea/
+
+# nix build output
+/result
+
+# testing timer db
+/timers.db
