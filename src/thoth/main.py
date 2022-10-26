@@ -22,6 +22,7 @@ async def on_ready():
     print('We have logged in as {0.user}'.format(client))
     global botready
     botready=True
+    await client.change_presence(activity=discord.Game('thoth;help'))
     check_timers.start()
 
 @tasks.loop(seconds=5)
@@ -46,7 +47,10 @@ async def check_timers():
                 chan_id=int(timer_obj.channel)
                 chan=client.get_channel(chan_id)
                 if truedelta<= 9:
-                    badgering_or_not=y[len(y)-2]
+                    if truedelta<=-600:
+                        messagenew=timer_obj.message + ".\n NOTE: THIS TIMER IS PROBABLY EXPIRED! Sorry for the downtime :c"
+                        timer_obj.message=messagenew
+                    badgering_or_not=y[len(y)-3]
                     if int(badgering_or_not)>0:
                         await badger_next_reminder(timer_obj)
                     else:
@@ -93,6 +97,9 @@ async def on_message(message):
             print(timer_arr)
             if timer_arr[0]=="Deleted!":
                 await message.channel.send("I have deleted all reminders with the code: " + timer_arr[1])
+            if timer_arr[0]=="Error_Message":
+                response=commandio.error_message()
+                await message.channel.send(response)
             else:
                 print(timer_arr[0].ping_time)
                 for x in timer_arr:
@@ -129,6 +136,16 @@ async def send_next_reminder(timer: Timerz.Timerz):
     message=timer.message
     full_message= "Hi " + mention + " , reminder: " + message + " (" + timer.del_code + ")"
     await channeler.send(full_message)
+    if timer.delta!="0":
+        old_ping_time = dateutil.parser.parse(timer.ping_time)
+        print("old_ping_time is: ")
+        print(old_ping_time)
+        time_delta= datetime.timedelta(seconds=int(float(timer.delta)))
+        print("time_delta is: " )
+        print(time_delta)
+        new_start=old_ping_time+time_delta
+        newtimer=Timerz.Timerz(str(new_start), timer.req_time, timer.user_id, timer.del_code, timer.channel, timer.message, timer.badgermode,timer.delta)
+        databaseio.insert_timer(newtimer)
     databaseio.pop_timer(timer)
     return
 

@@ -14,6 +14,7 @@ c.execute("""CREATE TABLE IF NOT EXISTS timers (
         channel text,
         message text,
         badgermode text,
+        delta text,
         whole text
         )""")
 
@@ -21,7 +22,7 @@ c.execute("""CREATE TABLE IF NOT EXISTS timers (
 def insert_timer(timer: Timerz):
     print("Delcode is " + timer.del_code)
     c.execute("""INSERT INTO timers VALUES 
-    (:ping_date,:req_date,:del_code,:user_id,:channel,:message,:badgermode,:whole)""",
+    (:ping_date,:req_date,:del_code,:user_id,:channel,:message,:badgermode,:delta, :whole)""",
               {'ping_date': timer.ping_time,
                'req_date': timer.req_time,
                'del_code': timer.del_code,
@@ -29,6 +30,7 @@ def insert_timer(timer: Timerz):
                'channel': timer.channel,
                'message': timer.message,
                'badgermode': timer.badgermode,
+               'delta': timer.delta,
                'whole': timer.to_string()
                }
               )

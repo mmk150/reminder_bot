@@ -10,8 +10,9 @@ class Timerz:
     channel: str
     message: str
     badgermode: str
+    delta: str
 
-    def __init__(self, ping_time, req_time, user_id, del_code, channel, message, badgermode):
+    def __init__(self, ping_time, req_time, user_id, del_code, channel, message, badgermode,delta="0"):
         self.ping_time = ping_time
         self.req_time = req_time
         self.user_id= user_id
@@ -19,6 +20,7 @@ class Timerz:
         self.channel = channel
         self.message = message
         self.badgermode = badgermode
+        self.delta=delta
 
     def to_string(self) -> str:
         return json.dumps(self.__dict__)
@@ -28,9 +30,4 @@ class Timerz:
         return Timerz(**json.loads(data))
 
 
-def roundtrip_example(string_in_db: str):
 
-    my_timer = Timerz.from_string(string_in_db)
-    string_for_db = my_timer.to_string()
-
-    assert string_for_db == string_in_db

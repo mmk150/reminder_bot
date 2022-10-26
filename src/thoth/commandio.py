@@ -27,11 +27,11 @@ def parse_message(user: discord.User,req_time: datetime.datetime ,channel: disco
             #y is an array with a single Timerz
         case "recurring":
             y=recurring(x[1:],user,req_time,channel,del_code,badgermode)
-            # y is an array with a multiple
+            # y is an array with a single Recurring Timerz
         case "delete":
             y=delete(x[1],user,channel)
         case _:
-            y=[]
+            y=["Error_Message"]
     return y
 
 
@@ -47,7 +47,6 @@ def reminder(message_frag,user: discord.User,req_time: datetime.datetime ,channe
 def message_maker(message_arr):
     str=""
     for x in message_arr:
-
         x=re.sub('[^0-9a-zA-Z]+', '', x)
         str=str + " " + x + " "
     return str
@@ -61,9 +60,6 @@ def calendar(message_frag,user: discord.User,req_time: datetime.datetime ,channe
     y = [Timerz(str(ping_time), str(req_time), str(user.id), str(del_code), str(channel), str(message),str(badgermode))]
     return y
 
-def calendar_timezone():
-    return
-
 def recurring(message_frag,user: discord.User,req_time: datetime.datetime ,channel: discord.TextChannel.id ,del_code,badgermode):
     x = message_frag[0] + " " + message_frag[1]
     ping_time_start=datetime.datetime.strptime(x, "%m/%d/%Y %H:%M")
@@ -71,16 +67,14 @@ def recurring(message_frag,user: discord.User,req_time: datetime.datetime ,chann
     N=float(ratestring[0])
     unit = word_to_time(ratestring[1])
     message = message_maker(ratestring[2:])
-    delta = datetime.timedelta(seconds=convert_timer(N, unit))
-    timearr=[]
-    for x in range(100):
-        var=ping_time_start + x*delta
-        print(var)
-        print("line 70")
-        timearr=timearr+[var]
-    y=[]
-    for times in timearr:
-        y=y+[Timerz(str(times), str(req_time), str(user.id), str(del_code), str(channel), str(message),str(badgermode))]
+    delta = convert_timer(N, unit)
+    now=datetime.datetime.now()
+    time_delta=ping_time_start-now
+    truedelta = time_delta.seconds + time_delta.days * 3600 * 24
+    if delta>1800 and truedelta>0:
+        y=[Timerz(str(ping_time_start), str(req_time), str(user.id), str(del_code), str(channel), str(message),str(badgermode),str(delta))]
+    else:
+        y=["Error_Message"]
     return y
 
 def badger_init(timer: Timerz):
@@ -134,7 +128,7 @@ Ex: ``thoth;calendar 08/08/2022 19:00 drink water`` will result in the bot remin
                 """
             case "recurring":
                 reply="""Command to schedule a recurring reminder. Follows the format ``thoth;calendar MM/DD/YYYY hh:mm every N TIMEUNITS message``, where all date and time variables are integer valued and time is on a 24-hour clock, N is an integer, and TIMEUNITS are as in the thoth;reminder command.
-Ex: ``thoth;calendar 08/08/2022 19:00 every 5 minutes drink water`` will result in the bot reminding you at this date and time to drink water, and every five minutes afterwards. It will generate at most a thousand of these with one command, please do not abuse.
+Ex: ``thoth;calendar 08/08/2022 19:00 every 30 minutes drink water`` will result in the bot reminding you at this date and time to drink water, and every thirty minutes afterwards. Note: To prevent abuse, the time between reminders must be at least 30 minutes and the start time must be in the future!!
                 """
             case "help":
                 reply="""You think you're clever, don't you?
