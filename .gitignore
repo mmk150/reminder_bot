@@ -2,6 +2,11 @@
 venv/
 .idea/
 
+# no python compiled problems
+__pycache__/
+*.pyc
+*.pyo
+
 # testing files
 thoth/toke.py
 thoth/scratch.py
@@ -11,4 +16,4 @@ thoth/timers.db
 /result
 
 # testing timer db
-/timers.db
+timers.db
