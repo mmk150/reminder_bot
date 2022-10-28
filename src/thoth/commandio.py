@@ -127,7 +127,7 @@ Ex: ``thoth;reminder 5 hours eat dinner``.
 Ex: ``thoth;calendar 08/08/2022 19:00 drink water`` will result in the bot reminding you at this date and time to drink water. 
                 """
             case "recurring":
-                reply="""Command to schedule a recurring reminder. Follows the format ``thoth;calendar MM/DD/YYYY hh:mm every N TIMEUNITS message``, where all date and time variables are integer valued and time is on a 24-hour clock, N is an integer, and TIMEUNITS are as in the thoth;reminder command.
+                reply="""Command to schedule a recurring reminder. Follows the format ``thoth;recurring MM/DD/YYYY hh:mm every N TIMEUNITS message``, where all date and time variables are integer valued and time is on a 24-hour clock, N is an integer, and TIMEUNITS are as in the thoth;reminder command.
 Ex: ``thoth;calendar 08/08/2022 19:00 every 30 minutes drink water`` will result in the bot reminding you at this date and time to drink water, and every thirty minutes afterwards. Note: To prevent abuse, the time between reminders must be at least 30 minutes and the start time must be in the future!!
                 """
             case "help":
