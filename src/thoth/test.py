@@ -520,4 +520,4 @@ async def reactcheck(message: discord.Message, user: discord.User, delcode: str)
     return
 
 
-client.run("OTY2ODM0MjQwMDQ0MDI3OTU0.GJgCCC.5oyHkxl-jaxDmR3UiqjVhOk_kHUtAQLFmoeRPw")
+client.run("THOTH_TOKEN")
