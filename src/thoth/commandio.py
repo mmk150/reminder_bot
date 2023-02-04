@@ -17,21 +17,7 @@ def parse_message(
     badgermode,
     command,
 ):
-    print("parse message")
-    print(user)
-    print(type(user))
-    print(req_time)
-    print(type(req_time))
-    print(channel)
-    print(type(channel))
-    print(del_code)
-    print(type(del_code))
-    print(message)
-    print(type(message))
-    print(badgermode)
-    print(type(badgermode))
-    print(command)
-    print(type(command))
+
     x = message.split()
     word = x[0]
     assert type(command) == str
