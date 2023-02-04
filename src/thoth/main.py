@@ -3,35 +3,364 @@ import dateutil.parser
 import discord
 import datetime
 import secrets
-
 from discord.ext import tasks
-
+from discord import app_commands
 import asyncio
 
 
-intents: discord.Intents = discord.Intents.default()
-intents.message_content = True
-intents.typing = False
-intents.presences = False
-# intents.reactions = True
-client = discord.Client(intents=intents)
-botready = False
+class aclient(discord.Client):
+    def __init__(self):
+        super().__init__(intents=discord.Intents.default())
+        self.tree = app_commands.CommandTree(self)
+        self.synced = False
+
+    async def on_ready(self):
+        await self.wait_until_ready()
+        if not self.synced:
+            for g in self.guilds:
+                self.tree.copy_global_to(guild=g)
+                await self.tree.sync(guild=g)
+            self.synced = True
+        print(f"We have logged in as {self.user}.")
+        check_timers.start()
 
 
-@client.event
-async def on_ready():
-    print("We have logged in as {0.user}".format(client))
-    global botready
-    botready = True
-    await client.change_presence(activity=discord.Game("/thoth help"))
-    check_timers.start()
+client = aclient()
+
+guildlist = client.guilds
+tree = client.tree
+
+
+@tree.command(
+    name="help",
+    description="This function will link you to some more detailed documentation.",
+    guilds=guildlist,
+)
+async def self(interaction: discord.Interaction):
+    reply = """```
+        Here is a list of my slash commands with abbreviated descriptions:
+        /help -> This message!
+        /reminder -> A basic reminder -- really a glorified timer. Reminds you when the timer is up.
+        /calendar-> Calendar reminder. Input a specific calendar date and time.
+        /recurring -> A recurring reminder that repeats according to a frequency(of at least 30 mins).
+        /rm -> Short version of basic reminder. Time is in minutes.
+        /rec_now -> Short version of recurring reminder. Start date/time determined by the current time.
+        /delete -> Command to delete a set of reminders.Input the deletion code associated with the reminder(s).
+        /get_reminders -> bot dms you a list of active reminders
+        More extensive documentation pending.
+        Disclaimer: Reminder details are not encrypted. Do not store sensitive info in reminders.```
+        """
+    await interaction.response.send_message(f"Hello {interaction.user}!\n" + reply)
+
+
+@tree.command(
+    name="reminder",
+    description="Basic reminder function-- really a glorified timer. Reminds you when the timer is up.",
+    guilds=guildlist,
+)
+@app_commands.describe(
+    time="Please input 'N TIMEUNITS' where TIMEUNITS is minutes,hours,days,weeks or months.",
+    message="The message you want attached to this reminder.",
+    badger="Input '1' to have the bot repeatedly ping until you react to the reminder.",
+)
+async def self(interaction: discord.Interaction, time: str, message: str, badger: str):
+    time_now = datetime.datetime.now()
+    channel = interaction.channel_id
+    user = interaction.user.id
+    user = await client.fetch_user(user)
+    del_code = secrets.token_hex(3)
+    badger = badger.strip()
+    match badger:
+        case "1":
+            badgermode = 3
+        case _:
+            badgermode = 0
+
+    message = time + " " + message
+    try:
+        timer_arr = commandio.parse_message(
+            user, time_now, channel, del_code, message, badgermode, "reminder"
+        )
+    except:
+        x = commandio.error_message()
+        await interaction.response.send_message(x)
+        return
+    print(timer_arr)
+    if timer_arr[0] == "Error_Message":
+        response = commandio.error_message()
+        await interaction.response.send_message(response)
+    else:
+        print(timer_arr[0])
+        print(timer_arr[0].ping_time)
+        for x in timer_arr:
+            databaseio.insert_timer(x)
+        await interaction.response.send_message(
+            f"``reminder {message}``\n"
+            + f"Very well, I'll scribble that down for you. The deletion code for these timers is:  {del_code}"
+        )
+
+
+@tree.command(
+    name="calendar",
+    description="Calendar reminder. Input a specific calendar date and time.",
+    guilds=guildlist,
+)
+@app_commands.describe(
+    date="Please input 'MM/DD/YYYY' where these are integer valued and represent a future (or present) date.",
+    time="Please input 'hh:mm' to set a time for your reminder on a 24 hour clock (sometimes called 'military time')",
+    message="The message you want attached to this reminder.",
+    badger="Input 1 to have the bot repeatedly ping until you react to the reminder.",
+)
+async def self(
+    interaction: discord.Interaction, date: str, time: str, message: str, badger: str
+):
+    time_now = datetime.datetime.now()
+    channel = interaction.channel_id
+    user = interaction.user.id
+    user = await client.fetch_user(user)
+    del_code = secrets.token_hex(3)
+    badger = badger.strip()
+    match badger:
+        case "1":
+            badgermode = 3
+        case _:
+            badgermode = 0
+
+    message = date + " " + time + " " + message
+    try:
+        timer_arr = commandio.parse_message(
+            user, time_now, channel, del_code, message, badgermode, "calendar"
+        )
+    except:
+        x = commandio.error_message()
+        await interaction.response.send_message(x)
+        return
+    print(timer_arr)
+    if timer_arr[0] == "Error_Message":
+        response = commandio.error_message()
+        await interaction.response.send_message(response)
+    else:
+        print(timer_arr[0])
+        print(timer_arr[0].ping_time)
+        for x in timer_arr:
+            databaseio.insert_timer(x)
+        await interaction.response.send_message(
+            f"``calendar {message}``\n"
+            + f"Very well, I'll scribble that down for you. The deletion code for these timers is:  {del_code}"
+        )
+
+
+@tree.command(
+    name="recurring",
+    description="A recurring calendar reminder. Will repeat according to a frequency(of at least 30 mins).",
+    guilds=guildlist,
+)
+@app_commands.describe(
+    start_date="Please input 'MM/DD/YYYY' where these are integer valued and represent a future or present date.",
+    start_time="Please input 'hh:mm' to set a time for your reminder on a 24 hour clock.",
+    frequency="Frequency: input 'N TIMEUNITS' where TIMEUNITS is minutes,hours,days,weeks or months.",
+    message="The message you want attached to this reminder.",
+    badger="Input 1 to have the bot repeatedly ping until you react to the reminder.",
+)
+async def self(
+    interaction: discord.Interaction,
+    start_date: str,
+    start_time: str,
+    frequency: str,
+    message: str,
+    badger: str,
+):
+    time_now = datetime.datetime.now()
+    channel = interaction.channel_id
+    user = interaction.user.id
+    user = await client.fetch_user(user)
+    del_code = secrets.token_hex(3)
+    badger = badger.strip()
+    match badger:
+        case "1":
+            badgermode = 3
+        case _:
+            badgermode = 0
+
+    message = start_date + " " + start_time + " every " + frequency + " " + message
+    try:
+        timer_arr = commandio.parse_message(
+            user, time_now, channel, del_code, message, badgermode, "recurring"
+        )
+    except:
+        x = commandio.error_message()
+        await interaction.response.send_message(x)
+        return
+    print(timer_arr)
+    if timer_arr[0] == "Error_Message":
+        response = commandio.error_message()
+        await interaction.response.send_message(response)
+    else:
+        print(timer_arr[0])
+        print(timer_arr[0].ping_time)
+        for x in timer_arr:
+            databaseio.insert_timer(x)
+        await interaction.response.send_message(
+            f"``recurring {message}``\n"
+            + f"Very well, I'll scribble that down for you. The deletion code for these timers is:  {del_code}"
+        )
+
+
+@tree.command(
+    name="delete",
+    description="Command to delete a set of reminders.Input the deletion code associated with the reminder(s).",
+    guilds=guildlist,
+)
+@app_commands.describe(
+    del_code="Input the deletion code of the reminder(s) you want to delete.",
+)
+async def self(interaction: discord.Interaction, del_code: str):
+    time_now = datetime.datetime.now()
+    channel = interaction.channel_id
+    user = interaction.user.id
+    user = await client.fetch_user(user)
+    badgermode = 0
+
+    try:
+        timer_arr = commandio.parse_message(
+            user, time_now, channel, del_code, del_code, badgermode, "delete"
+        )
+    except:
+        x = commandio.error_message()
+        await interaction.response.send_message(x)
+        return
+    if timer_arr[0] == "Error_Message":
+        response = commandio.error_message()
+        await interaction.response.send_message(response)
+    else:
+        print(timer_arr[0])
+        await interaction.response.send_message(
+            f"I have deleted all reminders with the code: " + timer_arr[1]
+        )
+
+
+@tree.command(
+    name="get_reminders",
+    description="Messages you a list of your future reminders.",
+    guilds=guildlist,
+)
+async def self(interaction: discord.Interaction):
+    channel = interaction.channel_id
+    user = interaction.user.id
+    user = await client.fetch_user(user)
+    message = "Hello, here are your upcoming reminders:\n"
+    next_timers = databaseio.get_my_timers(user.id)
+    for i in range(len(next_timers)):
+        x = next_timers[i]
+        timer_obj = Timerz.Timerz.from_string(x[-1])
+        temp = [timer_obj.ping_time[0:17], timer_obj.del_code, timer_obj.message]
+        newline = f"Reminder: '**{temp[2]}**'. Goes off at: {temp[0]}. This reminder has deletion code: {temp[1]} \n"
+        message = message + newline
+    try:
+        await interaction.user.send(message)
+    except:
+        await interaction.user.create_dm("Creating DM")
+        await interaction.user.send(message)
+    await interaction.response.send_message(
+        "Sent you a message containing your reminders."
+    )
+
+
+@tree.command(
+    name="rm",
+    description="Short version of basic reminder. Time is in minutes.",
+    guilds=guildlist,
+)
+@app_commands.describe(
+    time="Please input 'N' where N is the number of minutes until the reminder.",
+    message="The message you want attached to this reminder.",
+)
+async def self(interaction: discord.Interaction, time: str, message: str):
+    time_now = datetime.datetime.now()
+    channel = interaction.channel_id
+    user = interaction.user.id
+    user = await client.fetch_user(user)
+    del_code = secrets.token_hex(3)
+    badgermode = 0
+
+    message = time + " minutes " + message
+    try:
+        timer_arr = commandio.parse_message(
+            user, time_now, channel, del_code, message, 0, "reminder"
+        )
+    except:
+        x = commandio.error_message()
+        await interaction.channel.send(x)
+        return
+    print(timer_arr)
+    if timer_arr[0] == "Error_Message":
+        response = commandio.error_message()
+        await interaction.channel.send(response)
+    else:
+        print(timer_arr[0])
+        print(timer_arr[0].ping_time)
+        for x in timer_arr:
+            databaseio.insert_timer(x)
+        await interaction.response.send_message(
+            f"``rm {message}``\n"
+            + f"Very well, I'll scribble that down for you. The deletion code for these timers is:  {del_code}"
+        )
+
+
+@tree.command(
+    name="rec_now",
+    description="Short version of recurring reminder. Start date/time determined by the current time.",
+    guilds=guildlist,
+)
+@app_commands.describe(
+    frequency="Please input 'N TIMEUNITS' where TIMEUNITS is minutes,hours,days,weeks or months.",
+    message="The message you want attached to this reminder.",
+)
+async def self(interaction: discord.Interaction, frequency: str, message: str):
+    time_now = datetime.datetime.now()
+    channel = interaction.channel_id
+    user = interaction.user.id
+    user = await client.fetch_user(user)
+    del_code = secrets.token_hex(3)
+
+    start_date = time_now.date().strftime("%m/%d/%Y")
+    time_offset = datetime.timedelta(seconds=120)
+    start_time = time_now + time_offset
+    start_time = start_time.time().strftime("%H:%M")
+    message = start_date + " " + start_time + " every " + frequency + " " + message
+    print(message)
+    try:
+        timer_arr = commandio.parse_message(
+            user, time_now, channel, del_code, message, 0, "recurring"
+        )
+    except:
+        x = commandio.error_message()
+        await interaction.response.send_message(x)
+        return
+    print(timer_arr)
+    if timer_arr[0] == "Error_Message":
+        response = commandio.error_message()
+        await interaction.response.send_message(response)
+    else:
+        print(timer_arr[0])
+        print(timer_arr[0].ping_time)
+        for x in timer_arr:
+            databaseio.insert_timer(x)
+        print(
+            f"``rec_now {message}``\n"
+            + f"Very well, I'll scribble that down for you. The deletion code for these timers is:  {del_code}"
+        )
+        await interaction.response.send_message(
+            f"``rec_now {message}``\n"
+            + f"Very well, I'll scribble that down for you. The deletion code for these timers is:  {del_code}"
+        )
 
 
 @tasks.loop(seconds=5)
 async def check_timers():
     timer_ob: Timerz.Timerz
     chan: discord.TextChannel
-    if not botready:
+    if not client.synced:
         return
     else:
         now = datetime.datetime.now()
@@ -57,82 +386,7 @@ async def check_timers():
                         await badger_next_reminder(timer_obj)
                     else:
                         await send_next_reminder(timer_obj)
-
                     return
-
-
-@client.event
-async def on_message(message):
-    author: discord.User
-    channel: int
-    server: discord.Guild
-
-    author = message.author
-    channel = message.channel.id
-    server = message.guild
-    if server == None:
-        return
-    if message.author == client.user:
-        return
-    if message.content.startswith("thoth;"):
-
-        time_now = datetime.datetime.now()
-        rest = message.content
-        rest = rest[6:]
-        del_code = secrets.token_hex(3)
-        if message.content.startswith("thoth;help"):
-            response = commandio.helpy(rest, channel)
-            await message.channel.send(response)
-        elif message.content.startswith("thoth;badger"):
-            try:
-                timer_arr = commandio.parse_message(
-                    author, time_now, channel, del_code, rest, 3
-                )
-            except:
-                x = commandio.error_message()
-                await message.channel.send(x)
-                return
-            for x in timer_arr:
-                databaseio.insert_timer(x)
-            await message.channel.send(
-                "Very well, I'll scribble that down for you. The deletion code for these timers is: "
-                + del_code
-            )
-        else:
-            try:
-                timer_arr = commandio.parse_message(
-                    author, time_now, channel, del_code, rest, 0
-                )
-            except:
-                x = commandio.error_message()
-                await message.channel.send(x)
-                return
-            print(timer_arr)
-            if timer_arr[0] == "Deleted!":
-                await message.channel.send(
-                    "I have deleted all reminders with the code: " + timer_arr[1]
-                )
-            elif timer_arr[0] == "Error_Message":
-                response = commandio.error_message()
-                await message.channel.send(response)
-            else:
-                print(timer_arr[0])
-                print(timer_arr[0].ping_time)
-                for x in timer_arr:
-                    databaseio.insert_timer(x)
-                await message.channel.send(
-                    "Very well, I'll scribble that down for you. The deletion code for these timers is: "
-                    + del_code
-                )
-
-
-async def admin_clear():
-    while databaseio.search_next_timers() != []:
-        x = databaseio.search_next_timers()
-        for y in x:
-            timer = Timerz.Timerz.from_string(y[-1])
-            databaseio.remove_timer(timer.del_code)
-    return
 
 
 async def next_ten_timers():
@@ -206,7 +460,7 @@ async def badger_next_reminder(timer: Timerz.Timerz):
     else:
         badge_init_delcode = timer.del_code
     r = await chan.send(full_message)
-
+    await r.add_reaction("✅")
     databaseio.pop_timer(timer)
     asyncio.create_task(reactcheck(r, user, badge_init_delcode))
     return

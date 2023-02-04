@@ -1,13 +1,29 @@
 import sqlite3
 import Timerz
 import datetime
+import os
 
 conn = sqlite3.connect("timers.db")
-
+conn2 = sqlite3.connect("timers_temp.db")
 c = conn.cursor()
+c2 = conn2.cursor()
 
 c.execute(
     """CREATE TABLE IF NOT EXISTS timers (
+        ping_date text,
+        req_date text,
+        del_code text,
+        user_id text,
+        channel text,
+        message text,
+        badgermode text,
+        delta text,
+        whole text
+        )"""
+)
+
+c2.execute(
+    """CREATE TABLE IF NOT EXISTS temp_timers (
         ping_date text,
         req_date text,
         del_code text,
@@ -91,3 +107,37 @@ def pop_timer(timer: Timerz):
         f"pop_timer affected {cursor.rowcount} rows deleting with={timer.ping_time , timer.req_time}"
     )
     conn.commit()
+
+
+def db_to_temp():
+    c.execute(
+        """SELECT *
+    FROM timers;
+    """,
+    )
+    timers_db = c.fetchall()
+    if timers_db:
+        ##How to copy things into temp database?
+        c2.executemany("INSERT INTO temp_timers VALUES(?,?,?,?,?,?,?,?,?)", timers_db)
+        copied = True
+        conn2.commit()
+    else:
+        copied = False
+    return copied
+
+
+def concat_db():
+    c2.execute(
+        """SELECT *
+    FROM temp_timers;
+    """,
+    )
+    temp_db = c2.fetchall()
+    added = False
+    if temp_db:
+        c.executemany("INSERT INTO timers VALUES(?,?,?,?,?,?,?,?,?)", temp_db)
+        conn.commit()
+        c2.execute("DROP TABLE temp_timers;")
+        conn2.commit()
+        added = True
+    return added

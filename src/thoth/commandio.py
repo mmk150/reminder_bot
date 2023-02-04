@@ -87,7 +87,6 @@ def reminder(
 def message_maker(message_arr):
     str = ""
     for x in message_arr:
-        x = re.sub("[^0-9a-zA-Z]+", "", x)
         str = str + " " + x + " "
     return str
 
