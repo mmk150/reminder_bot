@@ -1,11 +1,11 @@
-import databaseio
+from . import databaseio
 import discord
 import datetime
 import dateutil
 import re
 import secrets
-from timecalcs import word_to_time, convert_timer
-from Timerz import Timerz
+from .timecalcs import word_to_time, convert_timer
+from .Timerz import Timerz
 
 
 def parse_message(

@@ -1,5 +1,5 @@
 import sqlite3
-import Timerz
+from . import Timerz
 import datetime
 import os
 

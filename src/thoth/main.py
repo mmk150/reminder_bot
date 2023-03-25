@@ -1,4 +1,4 @@
-from thoth import Timerz, commandio, databaseio
+from . import Timerz, commandio, databaseio
 import dateutil.parser
 import discord
 import datetime
@@ -356,7 +356,7 @@ async def self(interaction: discord.Interaction, frequency: str, message: str):
         )
 
 
-@tasks.loop(seconds=5)
+@tasks.loop(seconds=5, reconnect=True)
 async def check_timers():
     timer_ob: Timerz.Timerz
     chan: discord.TextChannel
@@ -365,28 +365,22 @@ async def check_timers():
     else:
         now = datetime.datetime.now()
         r = await next_ten_timers()
-        print(r)
-        print(len(r))
-        if r != []:
-            for y in r:
-                timer_obj = Timerz.Timerz.from_string(y[-1])
-                x = dateutil.parser.parse(timer_obj.ping_time)
-                delta = x - now
-                truedelta = delta.seconds + delta.days * 3600 * 24
-                print(truedelta)
-                print(y)
-                chan_id = int(timer_obj.channel)
-                chan = client.get_channel(chan_id)
-                if truedelta <= 9:
-                    if truedelta <= -600:
-                        await send_late_reminder(timer_obj)
-                        return
-                    badgering_or_not = y[len(y) - 3]
-                    if int(badgering_or_not) > 0:
-                        await badger_next_reminder(timer_obj)
-                    else:
-                        await send_next_reminder(timer_obj)
-                    return
+        print("fetched next_ten_timers()", r, len(r))
+        for y in r:
+            timer_obj = Timerz.Timerz.from_string(y[-1])
+            x = dateutil.parser.parse(timer_obj.ping_time)
+            delta = x - now
+            truedelta = delta.seconds + delta.days * 3600 * 24
+            print(truedelta)
+            print(y)
+            if truedelta <= -600:
+                await send_late_reminder(timer_obj)
+            elif truedelta <= 9:
+                badgering_or_not = y[len(y) - 3]
+                if int(badgering_or_not) > 0:
+                    await badger_next_reminder(timer_obj)
+                else:
+                    await send_next_reminder(timer_obj)
 
 
 async def next_ten_timers():
@@ -402,9 +396,15 @@ async def send_next_reminder(timer: Timerz.Timerz):
     print(userid)
     user = await client.fetch_user(userid)
     print(user)
+    if not user:
+        print("can't find user for timer", timer)
+        return
     mention = user.mention
     chan_id = int(timer.channel)
     channeler = client.get_channel(chan_id)
+    if not channeler:
+        print("can't find channel for timer", timer)
+        return
     message = timer.message
     full_message = (
         "Hi " + mention + " , reminder: " + message + " (" + timer.del_code + ")"
@@ -441,6 +441,9 @@ async def badger_next_reminder(timer: Timerz.Timerz):
     chanid = int(timer.channel)
     chan = client.get_channel(chanid)
     user = await client.fetch_user(int(timer.user_id))
+    if not chan or not user:
+        print("can't find channel or user for timer", timer)
+
     mention = user.mention
     message = timer.message
 
