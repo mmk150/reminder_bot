@@ -473,7 +473,7 @@ async def badger_next_reminder(timer: Timerz.Timerz):
     r = await chan.send(full_message)
     await r.add_reaction("✅")
     databaseio.pop_timer(timer)
-    asyncio.create_task(reactcheck(r, user, badge_init_delcode))
+    asyncio.create_task(reactcheck(r, userid, badge_init_delcode))
     return
 
 
@@ -531,12 +531,12 @@ async def send_late_reminder(timer: Timerz.Timerz):
     return
 
 
-async def reactcheck(message: discord.Message, user: discord.User, delcode: str):
+async def reactcheck(message: discord.Message, userid: int, delcode: str):
     allowed_message_id = message.id
 
     def check(reaction: discord.Reaction, disc_user: discord.User):
         return (
-            user.id == disc_user.id
+            userid == disc_user.id
             and reaction.message.id == allowed_message_id
             and str(reaction.emoji) == "✅"
         )
