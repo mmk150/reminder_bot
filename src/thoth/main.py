@@ -514,6 +514,8 @@ async def send_late_reminder(timer: Timerz.Timerz):
         print("time_delta is: ")
         print(time_delta)
         new_start = old_ping_time + time_delta
+        while new_start < datetime.datetime.now():
+            new_start = new_start + time_delta
         newtimer = Timerz.Timerz(
             str(new_start),
             timer.req_time,
