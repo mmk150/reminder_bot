@@ -381,6 +381,9 @@ async def check_timers():
                     await badger_next_reminder(timer_obj)
                 else:
                     await send_next_reminder(timer_obj)
+            else:
+                continue
+            return
 
 
 async def next_ten_timers():
@@ -390,26 +393,27 @@ async def next_ten_timers():
 
 async def send_next_reminder(timer: Timerz.Timerz):
     user: discord.User
-    channeler: discord.TextChannel
+    chan: discord.TextChannel
+    message: str
 
+    chan = None
     userid = int(timer.user_id)
-    print(userid)
-    user = await client.fetch_user(userid)
-    print(user)
-    if not user:
-        print("can't find user for timer", timer)
-        return
-    mention = user.mention
+    mention = "<@" + str(userid) + ">"
     chan_id = int(timer.channel)
-    channeler = client.get_channel(chan_id)
-    if not channeler:
+    message = timer.message
+    try:
+        chan = client.get_channel(chan_id)
+    except e:
+        print(e)
+    if not chan:
         print("can't find channel for timer", timer)
         return
+
     message = timer.message
     full_message = (
         "Hi " + mention + " , reminder: " + message + " (" + timer.del_code + ")"
     )
-    await channeler.send(full_message)
+    await chan.send(full_message)
     if timer.delta != "0":
         old_ping_time = dateutil.parser.parse(timer.ping_time)
         print("old_ping_time is: ")
@@ -435,17 +439,21 @@ async def send_next_reminder(timer: Timerz.Timerz):
 
 async def badger_next_reminder(timer: Timerz.Timerz):
     user: discord.User
-    channeler: discord.TextChannel
+    chan: discord.TextChannel
     message: str
 
-    chanid = int(timer.channel)
-    chan = client.get_channel(chanid)
-    user = await client.fetch_user(int(timer.user_id))
-    if not chan or not user:
-        print("can't find channel or user for timer", timer)
-
-    mention = user.mention
+    chan = None
+    userid = int(timer.user_id)
+    mention = "<@" + str(userid) + ">"
+    chan_id = int(timer.channel)
     message = timer.message
+    try:
+        chan = client.get_channel(chan_id)
+    except e:
+        print(e)
+    if not chan:
+        print("can't find channel for timer", timer)
+        return
 
     full_message: str = (
         "Hi "
@@ -471,16 +479,22 @@ async def badger_next_reminder(timer: Timerz.Timerz):
 
 async def send_late_reminder(timer: Timerz.Timerz):
     user: discord.User
-    channeler: discord.TextChannel
+    chan: discord.TextChannel
+    message: str
 
+    chan = None
     userid = int(timer.user_id)
-    print(userid)
-    user = await client.fetch_user(userid)
-    print(user)
-    mention = user.mention
+    mention = "<@" + str(userid) + ">"
     chan_id = int(timer.channel)
-    channeler = client.get_channel(chan_id)
     message = timer.message
+    try:
+        chan = client.get_channel(chan_id)
+    except e:
+        print(e)
+    if not chan:
+        print("can't find channel for timer", timer)
+        return
+
     full_message = (
         "Hi "
         + mention
@@ -491,7 +505,7 @@ async def send_late_reminder(timer: Timerz.Timerz):
         + timer.del_code
         + ")"
     )
-    await channeler.send(full_message)
+    await chan.send(full_message)
     if timer.delta != "0":
         old_ping_time = dateutil.parser.parse(timer.ping_time)
         print("old_ping_time is: ")
